@@ -1,0 +1,14 @@
+*.gguf
+*.bin
+*.db
+*.sqlite
+__pycache__/
+*.pyc
+.env
+venv/
+build/
+dist/
+*.so
+*.o
+.DS_Store
+Thumbs.db

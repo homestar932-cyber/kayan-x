@@ -1,0 +1,25 @@
+defaults:
+  allow_outside_workspace: false
+  require_confirmation_for_high_risk: true
+
+tools:
+  list_files:
+    risk: low
+  read_file:
+    risk: low
+  get_file_info:
+    risk: low
+  search_files:
+    risk: low
+  create_directory:
+    risk: low
+  copy_file:
+    risk: medium
+  move_file:
+    risk: medium
+  write_file:
+    risk: high
+    confirm_if_overwrite: true
+  delete_file:
+    risk: critical
+    requires_confirmation: true

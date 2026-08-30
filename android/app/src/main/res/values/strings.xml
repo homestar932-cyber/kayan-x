@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Kayan X</string>
+    <string name="select_downloads">اختر مجلد Downloads</string>
+    <string name="select_workspace">اختر مجلد العمل</string>
+    <string name="grant_access">منح الوصول</string>
+    <string name="confirm_dangerous">تأكيد العملية الخطرة</string>
+    <string name="cancel">إلغاء</string>
+    <string name="confirm">تأكيد</string>
+    <string name="agent_thinking">جارٍ التفكير…</string>
+    <string name="agent_executing">جارٍ التنفيذ…</string>
+    <string name="agent_verifying">جارٍ التحقق…</string>
+    <string name="benchmark">Benchmark</string>
+    <string name="settings">الإعدادات</string>
+    <string name="model_not_loaded">لم يتم تحميل النموذج</string>
+    <string name="select_gguf">اختر ملف GGUF</string>
+</resources>

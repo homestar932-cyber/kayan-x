@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Internal cache only. External storage is handled exclusively via SAF. -->
+    <cache-path name="internal_cache" path="." />
+    <files-path name="internal_files" path="." />
+</paths>
