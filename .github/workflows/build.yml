@@ -1,33 +1,25 @@
 name: Build Kayan X APK
-
 on:
   push:
-    branches: [ main ]
-
+    branches: [main]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
+      - uses: android-actions/setup-android@v3
       - name: Build APK
         run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+          GW=$(find. -name gradlew -type f | head -n 1)
+          echo "Found $GW"
+          chmod +x "$GW"
+          cd $(dirname "$GW")
+         ./gradlew assembleDebug --stacktrace
+      - uses: actions/upload-artifact@v4
         with:
           name: kayan-x-debug
-          path: android/app/build/outputs/apk/debug/*.apk
+          path: "**/build/outputs/apk/debug/*.apk"
