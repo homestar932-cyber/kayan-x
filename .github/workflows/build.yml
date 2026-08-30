@@ -14,11 +14,11 @@ jobs:
           java-version: '17'
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-      - name: Setup Gradle
+      - name: Setup Gradle 8.11
         uses: gradle/gradle-build-action@v3
         with:
-          gradle-version: 8.7
-      - name: Build AJK
+          gradle-version: 8.11
+      - name: Build APK
         run: |
           cd android
           gradle assembleDebug --stacktrace
