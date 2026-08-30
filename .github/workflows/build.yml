@@ -14,24 +14,30 @@ jobs:
           java-version: '17'
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-      - name: Debug structure
+      - name: Fix double android folder
         run: |
-          pwd
-          ls -la
-          ls -la android || echo "no android folder"
-          find . -name "gradlew" -type f
+          ls -la android/
+          ls -la android/android/ || true
+          echo "=== Fixing structure ==="
+          if [ -f "android/android/gradlew" ] && [ ! -f "android/gradlew" ]; then
+            cp android/android/gradlew android/gradlew
+            cp -r android/android/gradle android/gradle 2>/dev/null || cp -r android/android/gradle android/ 2>/dev/null || true
+            ls -la android/
+          fi
+          chmod +x android/gradlew 2>/dev/null || chmod +x android/android/gradlew 2>/dev/null || true
       - name: Build APK
         run: |
           if [ -f "android/gradlew" ]; then
-            chmod +x android/gradlew
             cd android
+            chmod +x gradlew
             ./gradlew assembleDebug --stacktrace
-          elif [ -f "./gradlew" ]; then
-            chmod +x ./gradlew
+          elif [ -f "android/android/gradlew" ]; then
+            cd android/android
+            chmod +x gradlew
             ./gradlew assembleDebug --stacktrace
           else
-            echo "ERROR: gradlew not found! Checking .gitignore"
-            cat .gitignore || true
+            echo "gradlew still not found"
+            find . -name gradlew
             exit 1
           fi
       - name: Upload APK
@@ -40,5 +46,5 @@ jobs:
           name: kayan-x-debug
           path: |
             android/app/build/outputs/apk/debug/*.apk
-            app/build/outputs/apk/debug/*.apk
+            android/android/app/build/outputs/apk/debug/*.apk
             **/build/outputs/apk/debug/*.apk
