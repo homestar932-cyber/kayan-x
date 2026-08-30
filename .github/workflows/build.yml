@@ -18,6 +18,35 @@ jobs:
         uses: gradle/gradle-build-action@v3
         with:
           gradle-version: 8.11
+      - name: Fix abiFilters conflict
+        run: |
+          echo "=== Before fix ==="
+          cat android/app/build.gradle.kts | head -n 200
+          echo "=== Fixing ==="
+          # Backup
+          cp android/app/build.gradle.kts android/app/build.gradle.kts.bak
+          # Use python to remove ndk abiFilters block which conflicts with splits
+          python3 << 'PY'
+          import re, pathlib
+          path = pathlib.Path("android/app/build.gradle.kts")
+          text = path.read_text()
+          # Remove ndk { abiFilters ... } block inside defaultConfig
+          # Pattern 1: ndk { abiFilters += ... } or abiFilters.add(...)
+          text = re.sub(r'ndk\s*\{[^}]*abiFilters[^}]*\}', '', text, flags=re.DOTALL)
+          # Also remove standalone abiFilters lines
+          text = re.sub(r'.*abiFilters.*\n', '', text)
+          # If splits still exists, we keep it and removed ndk. If you prefer keep ndk, remove splits block:
+          # Alternative: remove splits block entirely
+          # text = re.sub(r'splits\s*\{.*?\}\s*\}', '', text, flags=re.DOTALL)
+          # For safety, if both still cause issue, remove splits abi block
+          # Let's try to remove splits abi include conflict by keeping only one method: remove splits
+          # Actually best fix: remove splits block completely (Capacitor doesn't need it)
+          text = re.sub(r'splits\s*\{[^}]*abi[^}]*\{[^}]*\}[^}]*\}', '', text, flags=re.DOTALL)
+          text = re.sub(r'splits\s*\{.*?\n\s*\}', '', text, flags=re.DOTALL)
+          path.write_text(text)
+          print("=== After fix ===")
+          print(path.read_text()[:3000])
+          PY
       - name: Build APK
         run: |
           cd android
