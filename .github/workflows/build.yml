@@ -14,13 +14,31 @@ jobs:
           java-version: '17'
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-      - name: Build APK
-        working-directory: android
+      - name: Debug structure
         run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
+          pwd
+          ls -la
+          ls -la android || echo "no android folder"
+          find . -name "gradlew" -type f
+      - name: Build APK
+        run: |
+          if [ -f "android/gradlew" ]; then
+            chmod +x android/gradlew
+            cd android
+            ./gradlew assembleDebug --stacktrace
+          elif [ -f "./gradlew" ]; then
+            chmod +x ./gradlew
+            ./gradlew assembleDebug --stacktrace
+          else
+            echo "ERROR: gradlew not found! Checking .gitignore"
+            cat .gitignore || true
+            exit 1
+          fi
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: kayan-x-debug
-          path: android/app/build/outputs/apk/debug/*.apk
+          path: |
+            android/app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/debug/*.apk
+            **/build/outputs/apk/debug/*.apk
