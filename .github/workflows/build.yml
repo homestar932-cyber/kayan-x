@@ -18,35 +18,51 @@ jobs:
         uses: gradle/gradle-build-action@v3
         with:
           gradle-version: 8.11
-      - name: Fix abiFilters conflict
+      - name: Fix native package (reserved keyword) + abiFilters
         run: |
-          echo "=== Before fix ==="
-          cat android/app/build.gradle.kts | head -n 200
-          echo "=== Fixing ==="
-          # Backup
-          cp android/app/build.gradle.kts android/app/build.gradle.kts.bak
-          # Use python to remove ndk abiFilters block which conflicts with splits
+          echo "=== Fixing abiFilters ==="
+          cp android/app/build.gradle.kts android/app/build.gradle.kts.bak || true
           python3 << 'PY'
-          import re, pathlib
-          path = pathlib.Path("android/app/build.gradle.kts")
-          text = path.read_text()
-          # Remove ndk { abiFilters ... } block inside defaultConfig
-          # Pattern 1: ndk { abiFilters += ... } or abiFilters.add(...)
-          text = re.sub(r'ndk\s*\{[^}]*abiFilters[^}]*\}', '', text, flags=re.DOTALL)
-          # Also remove standalone abiFilters lines
-          text = re.sub(r'.*abiFilters.*\n', '', text)
-          # If splits still exists, we keep it and removed ndk. If you prefer keep ndk, remove splits block:
-          # Alternative: remove splits block entirely
-          # text = re.sub(r'splits\s*\{.*?\}\s*\}', '', text, flags=re.DOTALL)
-          # For safety, if both still cause issue, remove splits abi block
-          # Let's try to remove splits abi include conflict by keeping only one method: remove splits
-          # Actually best fix: remove splits block completely (Capacitor doesn't need it)
-          text = re.sub(r'splits\s*\{[^}]*abi[^}]*\{[^}]*\}[^}]*\}', '', text, flags=re.DOTALL)
-          text = re.sub(r'splits\s*\{.*?\n\s*\}', '', text, flags=re.DOTALL)
-          path.write_text(text)
-          print("=== After fix ===")
-          print(path.read_text()[:3000])
+          import re, pathlib, os, shutil, glob
+          # Fix build.gradle.kts abi conflict
+          p = pathlib.Path("android/app/build.gradle.kts")
+          if p.exists():
+              text = p.read_text()
+              text = re.sub(r'ndk\s*\{[^}]*abiFilters[^}]*\}', '', text, flags=re.DOTALL)
+              text = re.sub(r'.*abiFilters.*\n', '', text)
+              text = re.sub(r'splits\s*\{[^}]*abi[^}]*\{[^}]*\}[^}]*\}', '', text, flags=re.DOTALL)
+              text = re.sub(r'splits\s*\{.*?\n\s*\}', '', text, flags=re.DOTALL)
+              p.write_text(text)
+          # Fix package name native -> nativelib
+          base = pathlib.Path("android/app/src/main/java/com/kayanx/android")
+          src_native = base / "native"
+          src_new = base / "nativelib"
+          if src_native.exists():
+              print(f"Renaming {src_native} -> {src_new}")
+              if src_new.exists():
+                  shutil.rmtree(src_new)
+              shutil.move(str(src_native), str(src_new))
+          # Replace all imports and package declarations
+          for root, dirs, files in os.walk("android"):
+              for f in files:
+                  if f.endswith((".kt", ".java", ".kts")):
+                      fp = pathlib.Path(root) / f
+                      try:
+                          txt = fp.read_text()
+                          orig = txt
+                          txt = txt.replace("com.kayanx.android.native", "com.kayanx.android.nativelib")
+                          txt = txt.replace("package com.kayanx.android.native", "package com.kayanx.android.nativelib")
+                          txt = txt.replace("import com.kayanx.android.native", "import com.kayanx.android.nativelib")
+                          # Also fix directory reference in CMakeLists or other
+                          if orig != txt:
+                              fp.write_text(txt)
+                              print(f"Fixed {fp}")
+                      except Exception as e:
+                          print(f"Skip {fp}: {e}")
+          print("Fix done")
           PY
+          echo "=== After fix ==="
+          ls -R android/app/src/main/java/com/kayanx/android/ | head -n 100
       - name: Build APK
         run: |
           cd android
