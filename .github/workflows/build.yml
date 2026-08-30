@@ -14,32 +14,34 @@ jobs:
           java-version: '17'
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-      - name: Fix double android folder
+      - name: Fix Gradle Wrapper
         run: |
-          ls -la android/
-          ls -la android/android/ || true
-          echo "=== Fixing structure ==="
-          if [ -f "android/android/gradlew" ] && [ ! -f "android/gradlew" ]; then
-            cp android/android/gradlew android/gradlew
-            cp -r android/android/gradle android/gradle 2>/dev/null || cp -r android/android/gradle android/ 2>/dev/null || true
-            ls -la android/
+          echo "=== Before fix ==="
+          ls -la android/gradle/wrapper/ || true
+          ls -la android/android/gradle/wrapper/ || true
+          find . -name "gradle-wrapper.jar" -type f
+          echo "=== Fixing ==="
+          mkdir -p android/gradle/wrapper
+          if [ -f "android/android/gradle/wradper/gradle-wrapper.jar" ]; then
+            cp -v android/android/gradle/wrapper/gradle-wrapper.jar android/gradle/wrapper/
+            cp -v android/android/gradle/wrapper/gradle-wrapper.properties android/gradle/wrapper/ || true
           fi
-          chmod +x android/gradlew 2>/dev/null || chmod +x android/android/gradlew 2>/dev/null || true
+          if [ -f "android/android/gradle/wrapper/gradle-wrapper.properties" ] && [ ! -f "android/gradle/wrapper/gradle-wrapper.properties" ]; then
+            cp -v android/android/gradle/wrapper/gradle-wrapper.properties android/gradle/wrapper/
+          fi
+          if [ ! -f "android/gradle/wrapper/gradle-wrapper.jar" ]; then
+            echo "Wrapper JAR still missing - downloading fallback"
+            # download gradle wrapper jar from gradle distribution (fallback)
+            curl -L -o android/gradle/wrapper/gradle-wrapper.jar https://github.com/gradle/gradle/raw/master/gradle/wrapper/gradle-wrapper.jar || true
+          fi
+          echo "=== After fix ==="
+          ls -lh android/gradle/wrapper/
+          chmod +x android/gradlew || chmod +x android/android/gradlew || true
       - name: Build APK
         run: |
-          if [ -f "android/gradlew" ]; then
-            cd android
-            chmod +x gradlew
-            ./gradlew assembleDebug --stacktrace
-          elif [ -f "android/android/gradlew" ]; then
-            cd android/android
-            chmod +x gradlew
-            ./gradlew assembleDebug --stacktrace
-          else
-            echo "gradlew still not found"
-            find . -name gradlew
-            exit 1
-          fi
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --stacktrace
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
